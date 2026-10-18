@@ -45,7 +45,7 @@ public partial class WiringController : Node2D
 	public override void _Draw()
 	{
 		// Şematik Elektriksel Bağlantı Noktaları (Junction Dots •):
-		// 1) Birden fazla kablonun bağlı olduğu ortak pinler (T-junctions)
+		// 1) Ortak pin bağlantıları
 		Dictionary<PinView, int> pinWireCount = new();
 		foreach (var wire in _wires)
 		{
@@ -71,6 +71,111 @@ public partial class WiringController : Node2D
 				DrawArc(localPos, 5f, 0, Mathf.Tau, 16, Colors.White, 1.2f);
 			}
 		}
+
+		// 2) Kabloların hat üzerindeki T-Kavşakları (Aynı hedef pine veya kaynağa giden hatların birleşme noktaları)
+		List<Vector2> junctionPoints = new();
+		for (int i = 0; i < _wires.Count; i++)
+		{
+			var w1 = _wires[i];
+			var pts1 = w1.GetBaseWaypoints();
+
+			for (int j = i + 1; j < _wires.Count; j++)
+			{
+				var w2 = _wires[j];
+				// Sadece elektriksel olarak bağlı (ortak pini olan) kablolar junction oluşturur
+				bool sharesPin = w1.SourcePin == w2.SourcePin || w1.SourcePin == w2.TargetPin ||
+				                 w1.TargetPin == w2.SourcePin || w1.TargetPin == w2.TargetPin;
+				if (!sharesPin) continue;
+
+				var pts2 = w2.GetBaseWaypoints();
+
+				// w1'in köşe noktalarından biri w2'nin bir segmentinin üzerindeyse (T-junction)
+				foreach (var p in pts1)
+				{
+					if (IsPointOnSegments(p, pts2, out Vector2 jPt))
+					{
+						if (!IsNearAnyPin(jPt))
+							junctionPoints.Add(jPt);
+					}
+				}
+
+				// w2'nin köşe noktalarından biri w1'in bir segmentinin üzerindeyse
+				foreach (var p in pts2)
+				{
+					if (IsPointOnSegments(p, pts1, out Vector2 jPt))
+					{
+						if (!IsNearAnyPin(jPt))
+							junctionPoints.Add(jPt);
+					}
+				}
+			}
+		}
+
+		// Noktaları tekilleştirip çiz
+		List<Vector2> uniqueJunctions = new();
+		foreach (var jp in junctionPoints)
+		{
+			bool alreadyDrawn = false;
+			foreach (var u in uniqueJunctions)
+			{
+				if (u.DistanceTo(jp) < 4f)
+				{
+					alreadyDrawn = true;
+					break;
+				}
+			}
+			if (!alreadyDrawn)
+			{
+				uniqueJunctions.Add(jp);
+				Vector2 localPos = ToLocal(jp);
+				DrawCircle(localPos, 5f, Colors.White);
+				DrawCircle(localPos, 3.5f, new Color(0.12f, 0.14f, 0.18f));
+				DrawCircle(localPos, 2.5f, Colors.White);
+			}
+		}
+	}
+
+	private bool IsPointOnSegments(Vector2 pt, List<Vector2> waypoints, out Vector2 matchedPt)
+	{
+		matchedPt = pt;
+		for (int i = 0; i < waypoints.Count - 1; i++)
+		{
+			Vector2 a = waypoints[i];
+			Vector2 b = waypoints[i + 1];
+
+			float minX = Mathf.Min(a.X, b.X) - 1f;
+			float maxX = Mathf.Max(a.X, b.X) + 1f;
+			float minY = Mathf.Min(a.Y, b.Y) - 1f;
+			float maxY = Mathf.Max(a.Y, b.Y) + 1f;
+
+			// Nokta bu segmentin içinde ve hizasında mı?
+			if (pt.X >= minX && pt.X <= maxX && pt.Y >= minY && pt.Y <= maxY)
+			{
+				// Yatay segment üzerinde mi?
+				if (Mathf.Abs(a.Y - b.Y) < 1.5f && Mathf.Abs(pt.Y - a.Y) < 2f)
+				{
+					matchedPt = new Vector2(pt.X, a.Y);
+					return true;
+				}
+				// Dikey segment üzerinde mi?
+				if (Mathf.Abs(a.X - b.X) < 1.5f && Mathf.Abs(pt.X - a.X) < 2f)
+				{
+					matchedPt = new Vector2(a.X, pt.Y);
+					return true;
+				}
+			}
+		}
+		return false;
+	}
+
+	private bool IsNearAnyPin(Vector2 pt, float threshold = 12f)
+	{
+		foreach (var w in _wires)
+		{
+			if (w.SourcePin != null && w.SourcePin.GlobalPosition.DistanceTo(pt) < threshold) return true;
+			if (w.TargetPin != null && w.TargetPin.GlobalPosition.DistanceTo(pt) < threshold) return true;
+		}
+		return false;
 	}
 
 	public void HandlePinTap(PinView pinView)

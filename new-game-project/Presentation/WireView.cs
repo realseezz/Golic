@@ -35,17 +35,14 @@ public partial class WireView : Line2D
         ZIndex = 0;
     }
 
-    public override void _Process(double delta)
+    public List<Vector2> GetBaseWaypoints()
     {
-        if (SourcePin == null || TargetPin == null) return;
+        List<Vector2> baseWaypoints = new();
+        if (SourcePin == null || TargetPin == null) return baseWaypoints;
 
         Vector2 p0 = SourcePin.GlobalPosition;
         Vector2 p2 = TargetPin.GlobalPosition;
 
-        ClearPoints();
-
-        // 1. Temel Ortogonal Hat köşe noktaları
-        List<Vector2> baseWaypoints = new();
         if (p2.X < p0.X + 20f)
         {
             float detourY = Mathf.Max(p0.Y, p2.Y) + 36f;
@@ -64,10 +61,19 @@ public partial class WireView : Line2D
             baseWaypoints.Add(new Vector2(midX, p2.Y));
             baseWaypoints.Add(p2);
         }
+        return baseWaypoints;
+    }
+
+    public override void _Process(double delta)
+    {
+        if (SourcePin == null || TargetPin == null) return;
+
+        ClearPoints();
+
+        // 1. Temel Ortogonal Hat köşe noktaları
+        List<Vector2> baseWaypoints = GetBaseWaypoints();
 
         // 2. Kesişen kabloların üzerinden köprü atlama (Hop-over bridge)
-        // Kural: Yatay segmentler diğer kabloların dikey segmentlerini kesiyorsa, 
-        // ve bu iki kablo aynı mantıksal hattı/pini paylaşmıyorsa, köprü (yarım daire) atlar.
         var controller = GetParent() as WiringController;
         List<Vector2> finalPoints = new();
 
@@ -89,17 +95,16 @@ public partial class WireView : Line2D
                 foreach (var other in controller.Wires)
                 {
                     if (other == this) continue;
-                    // Eğer aynı pini paylaşıyorlarsa bu elektriksel birleşmedir, köprü atlamaz (nokta konur)
+                    // Eğer aynı pini paylaşıyorlarsa bu elektriksel birleşmedir, köprü atlamaz
                     if (other.SourcePin == SourcePin || other.SourcePin == TargetPin ||
                         other.TargetPin == SourcePin || other.TargetPin == TargetPin)
                         continue;
 
-                    // Diğer kablonun noktalarını tara
-                    int otherCount = other.GetPointCount();
-                    for (int j = 0; j < otherCount - 1; j++)
+                    var otherWaypoints = other.GetBaseWaypoints();
+                    for (int j = 0; j < otherWaypoints.Count - 1; j++)
                     {
-                        Vector2 o1 = other.GetPointPosition(j);
-                        Vector2 o2 = other.GetPointPosition(j + 1);
+                        Vector2 o1 = otherWaypoints[j];
+                        Vector2 o2 = otherWaypoints[j + 1];
 
                         // Diğer segment dikey mi?
                         if (Mathf.Abs(o1.X - o2.X) < 1f)
@@ -108,7 +113,7 @@ public partial class WireView : Line2D
                             float oMinY = Mathf.Min(o1.Y, o2.Y);
                             float oMaxY = Mathf.Max(o1.Y, o2.Y);
 
-                            if (ox > minX + 12f && ox < maxX - 12f && y >= oMinY && y <= oMaxY)
+                            if (ox > minX + 8f && ox < maxX - 8f && y >= oMinY && y <= oMaxY)
                             {
                                 hopsX.Add(ox);
                             }
@@ -127,24 +132,26 @@ public partial class WireView : Line2D
                     Vector2 currentPos = segStart;
                     finalPoints.Add(currentPos);
 
-                    float hopRadius = 7f;
+                    float hopRadius = 10f; // Daha belirgin şematik köprü
                     foreach (float hx in hopsX)
                     {
                         float dir = (segEnd.X >= segStart.X) ? 1f : -1f;
                         Vector2 beforeHop = new(hx - dir * hopRadius, y);
                         finalPoints.Add(beforeHop);
 
-                        // Yarım daire kavis (köprü yukarıya doğru kabarır)
-                        int arcSegments = 6;
-                        for (int k = 1; k <= arcSegments; k++)
+                        // Yarım daire kavis (köprü yukarıya doğru belirgin kabarır)
+                        int arcSegments = 10;
+                        for (int k = 1; k < arcSegments; k++)
                         {
                             float angle = Mathf.Pi - (Mathf.Pi * k / arcSegments); // Pi'den 0'a
                             float arcX = hx - Mathf.Cos(angle) * hopRadius * dir;
-                            float arcY = y - Mathf.Sin(angle) * (hopRadius * 1.25f);
+                            float arcY = y - Mathf.Sin(angle) * (hopRadius * 1.15f);
                             finalPoints.Add(new Vector2(arcX, arcY));
                         }
 
-                        currentPos = new Vector2(hx + dir * hopRadius, y);
+                        Vector2 afterHop = new(hx + dir * hopRadius, y);
+                        finalPoints.Add(afterHop);
+                        currentPos = afterHop;
                     }
                     continue; // Segment sonu bir sonraki adımda eklenecek
                 }
