@@ -1,0 +1,14 @@
+[gd_scene format=3 uid="uid://4pqund3nukl7"]
+
+[ext_resource type="Script" uid="uid://b3oh74jb8hnp4" path="res://Presentation/GridDrawer.cs" id="1_0e48y"]
+[ext_resource type="Script" uid="uid://kye4safuw4ge" path="res://Presentation/CameraController.cs" id="2_epypp"]
+[ext_resource type="Script" uid="uid://dfoiln045kjm5" path="res://Presentation/CircuitManager.cs" id="3_epypp"]
+
+[node name="CircuitManager" type="Node2D" unique_id=1228183646]
+script = ExtResource("3_epypp")
+
+[node name="GridDrawer" type="Node2D" parent="." unique_id=1667807463]
+script = ExtResource("1_0e48y")
+
+[node name="Camera2D" type="Camera2D" parent="." unique_id=2078959220]
+script = ExtResource("2_epypp")

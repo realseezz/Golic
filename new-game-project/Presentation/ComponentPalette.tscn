@@ -1,0 +1,115 @@
+[gd_scene format=3 uid="uid://cinro5ijryntw"]
+
+[ext_resource type="Script" path="res://Presentation/ComponentPalette.cs" id="1_palette"]
+
+[node name="ComponentPalette" type="CanvasLayer"]
+script = ExtResource("1_palette")
+
+[node name="LeftPanel" type="PanelContainer" parent="."]
+custom_minimum_size = Vector2(196, 0)
+anchors_preset = 9
+anchor_bottom = 1.0
+offset_left = 10.0
+offset_top = 16.0
+offset_right = 206.0
+offset_bottom = -16.0
+grow_vertical = 2
+
+[node name="MainVBox" type="VBoxContainer" parent="LeftPanel"]
+layout_mode = 2
+
+[node name="Header" type="Label" parent="LeftPanel/MainVBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 16
+text = "SPAWN MENU"
+horizontal_alignment = 1
+
+[node name="CategoryHBox" type="HBoxContainer" parent="LeftPanel/MainVBox"]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="Separator" type="HSeparator" parent="LeftPanel/MainVBox"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="Scroll" type="ScrollContainer" parent="LeftPanel/MainVBox"]
+layout_mode = 2
+size_flags_vertical = 3
+horizontal_scroll_mode = 0
+
+[node name="ItemsContainer" type="GridContainer" parent="LeftPanel/MainVBox/Scroll"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/h_separation = 8
+theme_override_constants/v_separation = 8
+columns = 2
+
+[node name="LeftToggleBtn" type="Button" parent="."]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(30, 48)
+offset_left = 8.0
+offset_top = 24.0
+offset_right = 38.0
+offset_bottom = 72.0
+text = "▶"
+
+[node name="RightPanel" type="PanelContainer" parent="."]
+custom_minimum_size = Vector2(140, 0)
+anchors_preset = 11
+anchor_left = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = -150.0
+offset_top = 16.0
+offset_right = -10.0
+offset_bottom = -16.0
+grow_horizontal = 0
+grow_vertical = 2
+
+[node name="ToolsVBox" type="VBoxContainer" parent="RightPanel"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="Header" type="Label" parent="RightPanel/ToolsVBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 16
+text = "TOOLS"
+horizontal_alignment = 1
+
+[node name="Separator" type="HSeparator" parent="RightPanel/ToolsVBox"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="SelectModeBtn" type="Button" parent="RightPanel/ToolsVBox"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 36)
+layout_mode = 2
+text = "⬚ SELECT"
+
+[node name="PauseBtn" type="Button" parent="RightPanel/ToolsVBox"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 36)
+layout_mode = 2
+text = "⏸ PAUSE"
+
+[node name="CenterBtn" type="Button" parent="RightPanel/ToolsVBox"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 36)
+layout_mode = 2
+text = "🎯 CENTER"
+
+[node name="ClearBtn" type="Button" parent="RightPanel/ToolsVBox"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 36)
+layout_mode = 2
+text = "🗑 CLEAR ALL"
+
+[node name="RightToggleBtn" type="Button" parent="."]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(30, 48)
+offset_left = -38.0
+offset_top = 24.0
+offset_right = -8.0
+offset_bottom = 72.0
+text = "◀"

@@ -1,0 +1,14 @@
+# Godot 4
+.godot/
+
+# .NET / C#
+bin/
+obj/
+*.csproj.user
+
+# OS / Editor
+.vs/
+.vscode/
+*.tmp
+*.log
+Thumbs.db
