@@ -129,8 +129,8 @@ public partial class WireView : Line2D
                     else
                         hopsX.Sort((a, b) => b.CompareTo(a));
 
-                    Vector2 currentPos = segStart;
-                    float hopWidth = 12f;  // Köprünün genişliği
+                    finalPoints.Add(segStart); // Başlangıç noktasını mutlaka ekle!
+                    float hopWidth = 10f;  // Köprünün genişliği
                     float hopHeight = 14f; // Köprünün yüksekliği (yukarı kalkma mesafesi)
 
                     foreach (float hx in hopsX)
@@ -145,8 +145,6 @@ public partial class WireView : Line2D
                         finalPoints.Add(hopUpLeft);
                         finalPoints.Add(hopUpRight);
                         finalPoints.Add(afterHop);
-
-                        currentPos = afterHop;
                     }
                 }
                 else
