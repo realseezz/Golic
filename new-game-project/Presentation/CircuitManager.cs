@@ -66,9 +66,9 @@ public partial class CircuitManager : Node2D
 	{
 		_confirmDialog = new ConfirmationDialog
 		{
-			Title = "Silme Onayı",
-			OkButtonText = "Evet, Sil",
-			CancelButtonText = "İptal"
+			Title = "Confirm Deletion",
+			OkButtonText = "Delete",
+			CancelButtonText = "Cancel"
 		};
 		_confirmDialog.Confirmed += OnDeleteConfirmed;
 		_confirmDialog.Canceled += OnDeleteCanceled;
@@ -97,7 +97,7 @@ public partial class CircuitManager : Node2D
 		_pendingDeleteGates.AddRange(_gateViews);
 		foreach (var g in _pendingDeleteGates) g.IsDeletePending = true;
 
-		_confirmDialog.DialogText = $"Tüm devreyi ({_pendingDeleteGates.Count} kapı) silmek istediğinize emin misiniz?";
+		_confirmDialog.DialogText = $"Are you sure you want to delete the entire circuit ({_pendingDeleteGates.Count} gates)?";
 		_confirmDialog.PopupCentered();
 	}
 
@@ -245,13 +245,13 @@ public partial class CircuitManager : Node2D
 
 				string summary = "";
 				if (_pendingDeleteGates.Count > 0 && _pendingDeleteWires.Count > 0)
-					summary = $"{_pendingDeleteGates.Count} kapı ve {_pendingDeleteWires.Count} kabloyu";
+					summary = $"{_pendingDeleteGates.Count} gate(s) and {_pendingDeleteWires.Count} wire(s)";
 				else if (_pendingDeleteGates.Count > 0)
-					summary = $"{_pendingDeleteGates.Count} kapıyı";
+					summary = $"{_pendingDeleteGates.Count} gate(s)";
 				else
-					summary = $"{_pendingDeleteWires.Count} kabloyu";
+					summary = $"{_pendingDeleteWires.Count} wire(s)";
 
-				_confirmDialog.DialogText = $"Seçili {summary} silmek istiyor musunuz?";
+				_confirmDialog.DialogText = $"Are you sure you want to delete selected {summary}?";
 				_confirmDialog.PopupCentered();
 				GetViewport().SetInputAsHandled();
 				return;
@@ -267,7 +267,7 @@ public partial class CircuitManager : Node2D
 					_pendingDeleteGates.Add(gate);
 					gate.IsDeletePending = true;
 
-					_confirmDialog.DialogText = $"'{gate.DisplayName}' kapısını silmek istiyor musunuz?";
+					_confirmDialog.DialogText = $"Delete gate '{gate.DisplayName}'?";
 					_confirmDialog.PopupCentered();
 					GetViewport().SetInputAsHandled();
 					return;
@@ -281,7 +281,7 @@ public partial class CircuitManager : Node2D
 				_pendingDeleteWire = clickedWire;
 				clickedWire.IsDeletePending = true;
 
-				_confirmDialog.DialogText = "Bu kablo bağlantısını silmek istiyor musunuz?";
+				_confirmDialog.DialogText = "Delete this wire connection?";
 				_confirmDialog.PopupCentered();
 				GetViewport().SetInputAsHandled();
 				return;
