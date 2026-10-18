@@ -84,7 +84,7 @@ public partial class WiringController : Node2D
 				var w2 = _wires[j];
 				// Sadece elektriksel olarak bağlı (ortak pini olan) kablolar junction oluşturur
 				bool sharesPin = w1.SourcePin == w2.SourcePin || w1.SourcePin == w2.TargetPin ||
-				                 w1.TargetPin == w2.SourcePin || w1.TargetPin == w2.TargetPin;
+								 w1.TargetPin == w2.SourcePin || w1.TargetPin == w2.TargetPin;
 				if (!sharesPin) continue;
 
 				var pts2 = w2.GetBaseWaypoints();
