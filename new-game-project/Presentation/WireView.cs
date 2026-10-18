@@ -1,5 +1,6 @@
 using Godot;
 using Golic.Core;
+using System.Collections.Generic;
 
 namespace Golic.Presentation;
 
@@ -31,7 +32,7 @@ public partial class WireView : Line2D
         JointMode = LineJointMode.Round;
         BeginCapMode = LineCapMode.Round;
         EndCapMode = LineCapMode.Round;
-        ZIndex = -1;
+        ZIndex = 0;
     }
 
     public override void _Process(double delta)
@@ -43,31 +44,119 @@ public partial class WireView : Line2D
 
         ClearPoints();
 
-        // Ortogonal (Manhattan) Rotalama:
-        // p0 -> pMid1 -> pMid2 -> p2
-        // Çıkış pini genellikle sağda (X pozitif), giriş pini solda.
-        // Aynı koridordan geçen kablolar CurveOffset kadar ötelenerek paralel gider.
-        
-        float midX = (p0.X + p2.X) * 0.5f + CurveOffset;
-        
-        // Eğer hedef solda kalıyorsa (geri dönüş hattı) engeli aşmak için Y ekseninde de bükülme
+        // 1. Temel Ortogonal Hat köşe noktaları
+        List<Vector2> baseWaypoints = new();
         if (p2.X < p0.X + 20f)
         {
-            float detourY = Mathf.Max(p0.Y, p2.Y) + 32f + Mathf.Abs(CurveOffset);
-            AddPoint(p0);
-            AddPoint(new Vector2(p0.X + 16f, p0.Y));
-            AddPoint(new Vector2(p0.X + 16f, detourY));
-            AddPoint(new Vector2(p2.X - 16f, detourY));
-            AddPoint(new Vector2(p2.X - 16f, p2.Y));
-            AddPoint(p2);
+            float detourY = Mathf.Max(p0.Y, p2.Y) + 36f;
+            baseWaypoints.Add(p0);
+            baseWaypoints.Add(new Vector2(p0.X + 16f, p0.Y));
+            baseWaypoints.Add(new Vector2(p0.X + 16f, detourY));
+            baseWaypoints.Add(new Vector2(p2.X - 16f, detourY));
+            baseWaypoints.Add(new Vector2(p2.X - 16f, p2.Y));
+            baseWaypoints.Add(p2);
         }
         else
         {
-            // Standart ileri yönlü S-kablo (Resimdeki gibi)
-            AddPoint(p0);
-            AddPoint(new Vector2(midX, p0.Y));
-            AddPoint(new Vector2(midX, p2.Y));
-            AddPoint(p2);
+            float midX = (p0.X + p2.X) * 0.5f;
+            baseWaypoints.Add(p0);
+            baseWaypoints.Add(new Vector2(midX, p0.Y));
+            baseWaypoints.Add(new Vector2(midX, p2.Y));
+            baseWaypoints.Add(p2);
+        }
+
+        // 2. Kesişen kabloların üzerinden köprü atlama (Hop-over bridge)
+        // Kural: Yatay segmentler diğer kabloların dikey segmentlerini kesiyorsa, 
+        // ve bu iki kablo aynı mantıksal hattı/pini paylaşmıyorsa, köprü (yarım daire) atlar.
+        var controller = GetParent() as WiringController;
+        List<Vector2> finalPoints = new();
+
+        for (int i = 0; i < baseWaypoints.Count - 1; i++)
+        {
+            Vector2 segStart = baseWaypoints[i];
+            Vector2 segEnd = baseWaypoints[i + 1];
+
+            bool isHorizontal = Mathf.Abs(segStart.Y - segEnd.Y) < 1f;
+
+            if (isHorizontal && controller != null)
+            {
+                float minX = Mathf.Min(segStart.X, segEnd.X);
+                float maxX = Mathf.Max(segStart.X, segEnd.X);
+                float y = segStart.Y;
+
+                // Bu yatay segmente rastlayan yabancı kablo dikey segmentlerini bul
+                List<float> hopsX = new();
+                foreach (var other in controller.Wires)
+                {
+                    if (other == this) continue;
+                    // Eğer aynı pini paylaşıyorlarsa bu elektriksel birleşmedir, köprü atlamaz (nokta konur)
+                    if (other.SourcePin == SourcePin || other.SourcePin == TargetPin ||
+                        other.TargetPin == SourcePin || other.TargetPin == TargetPin)
+                        continue;
+
+                    // Diğer kablonun noktalarını tara
+                    int otherCount = other.GetPointCount();
+                    for (int j = 0; j < otherCount - 1; j++)
+                    {
+                        Vector2 o1 = other.GetPointPosition(j);
+                        Vector2 o2 = other.GetPointPosition(j + 1);
+
+                        // Diğer segment dikey mi?
+                        if (Mathf.Abs(o1.X - o2.X) < 1f)
+                        {
+                            float ox = o1.X;
+                            float oMinY = Mathf.Min(o1.Y, o2.Y);
+                            float oMaxY = Mathf.Max(o1.Y, o2.Y);
+
+                            if (ox > minX + 12f && ox < maxX - 12f && y >= oMinY && y <= oMaxY)
+                            {
+                                hopsX.Add(ox);
+                            }
+                        }
+                    }
+                }
+
+                if (hopsX.Count > 0)
+                {
+                    // Soldan sağa veya sağdan sola yönüne göre sırala
+                    if (segStart.X < segEnd.X)
+                        hopsX.Sort();
+                    else
+                        hopsX.Sort((a, b) => b.CompareTo(a));
+
+                    Vector2 currentPos = segStart;
+                    finalPoints.Add(currentPos);
+
+                    float hopRadius = 7f;
+                    foreach (float hx in hopsX)
+                    {
+                        float dir = (segEnd.X >= segStart.X) ? 1f : -1f;
+                        Vector2 beforeHop = new(hx - dir * hopRadius, y);
+                        finalPoints.Add(beforeHop);
+
+                        // Yarım daire kavis (köprü yukarıya doğru kabarır)
+                        int arcSegments = 6;
+                        for (int k = 1; k <= arcSegments; k++)
+                        {
+                            float angle = Mathf.Pi - (Mathf.Pi * k / arcSegments); // Pi'den 0'a
+                            float arcX = hx - Mathf.Cos(angle) * hopRadius * dir;
+                            float arcY = y - Mathf.Sin(angle) * (hopRadius * 1.25f);
+                            finalPoints.Add(new Vector2(arcX, arcY));
+                        }
+
+                        currentPos = new Vector2(hx + dir * hopRadius, y);
+                    }
+                    continue; // Segment sonu bir sonraki adımda eklenecek
+                }
+            }
+
+            finalPoints.Add(segStart);
+        }
+        finalPoints.Add(baseWaypoints[^1]);
+
+        foreach (var pt in finalPoints)
+        {
+            AddPoint(pt);
         }
 
         if (IsDeletePending)
@@ -80,7 +169,6 @@ public partial class WireView : Line2D
         }
         else
         {
-            // Kendi output pininin değerine göre renk (High = Parlak Yeşil, Low = Koyu Gri)
             Pin? outPin = SourcePin.LogicPin.Type == PinType.Output ? SourcePin.LogicPin
                         : TargetPin.LogicPin.Type == PinType.Output ? TargetPin.LogicPin
                         : null;

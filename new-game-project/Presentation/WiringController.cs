@@ -17,6 +17,7 @@ public partial class WiringController : Node2D
 
 	public override void _Ready()
 	{
+		ZIndex = 5;
 		_previewLine = new Line2D
 		{
 			Width = WireWidth,
@@ -36,6 +37,39 @@ public partial class WiringController : Node2D
 		{
 			_previewLine.SetPointPosition(0, _selectedPin.GlobalPosition);
 			_previewLine.SetPointPosition(1, GetGlobalMousePosition());
+		}
+
+		QueueRedraw();
+	}
+
+	public override void _Draw()
+	{
+		// Şematik Elektriksel Bağlantı Noktaları (Junction Dots •):
+		// 1) Birden fazla kablonun bağlı olduğu ortak pinler (T-junctions)
+		Dictionary<PinView, int> pinWireCount = new();
+		foreach (var wire in _wires)
+		{
+			if (wire.SourcePin != null)
+			{
+				pinWireCount.TryGetValue(wire.SourcePin, out int sc);
+				pinWireCount[wire.SourcePin] = sc + 1;
+			}
+			if (wire.TargetPin != null)
+			{
+				pinWireCount.TryGetValue(wire.TargetPin, out int tc);
+				pinWireCount[wire.TargetPin] = tc + 1;
+			}
+		}
+
+		foreach (var (pin, count) in pinWireCount)
+		{
+			if (count > 1)
+			{
+				Vector2 localPos = ToLocal(pin.GlobalPosition);
+				Color dotColor = pin.LogicPin.State == LogicState.High ? new Color(0.1f, 0.95f, 0.25f) : new Color(0.35f, 0.4f, 0.5f);
+				DrawCircle(localPos, 5f, dotColor);
+				DrawArc(localPos, 5f, 0, Mathf.Tau, 16, Colors.White, 1.2f);
+			}
 		}
 	}
 
@@ -136,34 +170,6 @@ public partial class WiringController : Node2D
 		var wireView = new WireView();
 		wireView.Setup(a, b);
 		wireView.Net = net;
-
-		// Çakışan kablo kontrolü:
-		// 1) Ortak pin paylaşımı → aynı pine gelen/giden kablolar her zaman orada üst üste gelir
-		// 2) Yolun %25, %50, %75 noktasında yakınlık → paralel/kesişen kablolar
-		Vector2 aPos = a.GlobalPosition;
-		Vector2 bPos = b.GlobalPosition;
-		int overlapIndex = 0;
-		foreach (var existing in _wires)
-		{
-			bool sharesPin = existing.SourcePin == a || existing.SourcePin == b ||
-							 existing.TargetPin == a || existing.TargetPin == b;
-			bool pathClose = false;
-			for (int s = 1; s <= 3 && !pathClose; s++)
-			{
-				Vector2 sample = aPos.Lerp(bPos, s / 4f);
-				if (existing.IsNearPoint(sample, 22f))
-					pathClose = true;
-			}
-			if (sharesPin || pathClose)
-				overlapIndex++;
-		}
-
-		if (overlapIndex > 0)
-		{
-			float sign = (overlapIndex % 2 == 1) ? 1f : -1f;
-			float magnitude = Mathf.Ceil(overlapIndex / 2f) * 28f;
-			wireView.CurveOffset = sign * magnitude;
-		}
 
 		AddChild(wireView);
 		_wires.Add(wireView);
