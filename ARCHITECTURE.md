@@ -33,27 +33,30 @@ Golic/
 
 ---
 
-## 3. Güncel Kontrol Şeması
+## 3. Kontrol Şeması & Mobil UX Mimarisi (Benchmark Analizi)
 
-| Eylem | PC Kontrolü | Mobil Uyarlaması (Hedef) |
+> **Mobil Sandbox Oyunları Benchmarkı (Mindustry, Bad Piggies, Circuit Jam, Wire-Head):**
+> - **Parmak Kapama Problemi (Fat-Finger):** Mobilde 16-20px pinler parmak altında kalır. Çözüm: Dokunma anında pini algılayan sanal yarıçap (Touch Hitbox) 36px'e genişletilir ve parmağın hemen üzerinde minik bir büyüteç lensi (Magnifier/Offset indicator) belirir.
+> - **Kamera vs Etkileşim:** Boş alanda tek parmak = Pan. Çift parmak = Pinch-to-Zoom. Obje üzerinde tek parmak = Sürükleme.
+> - **Bağlam Menüsü (Radial/Context Menu):** Bir objeye dokunulduğunda hemen yanında 3 hızlı hap buton belirir: 🗑️ Sil, 🔄 Döndür (Rotate), 📋 Kopyala.
+
+| Eylem | PC Kontrolü | Mobil Uyarlaması (Hedeflenen UX) |
 |---|---|---|
-| **Kamera Gezinme (Pan)** | Orta Fare Tuşu (Tekerlek basılı) | Tek/İki Parmakla Kaydırma |
+| **Kamera Gezinme (Pan)** | Orta Fare Tuşu (Tekerlek basılı) | Boş alanda Tek Parmakla Kaydırma |
 | **Kamera Zoom** | Fare Tekerleği | İki Parmakla Kıstırma (Pinch-to-zoom) |
-| **Bileşen Taşıma** | Sol Tık + Sürükle | Tek Parmakla Sürükleme |
-| **Kablo Bağlama** | Pin 1 Sol Tık -> Pin 2 Sol Tık | Pin 1 Dokun -> Pin 2 Dokun |
-| **Switch Aç/Kapa** | Sol Tık (Sürüklemeden bırak) | Dokunup bırakma |
-| **Çoklu Seçim (Box Select)**| TOOLS menüsünden `⬚ SELECT` -> Sol tık sürükle | `⬚ SELECT` aracı ile seçim kutusu |
-| **Grup Sürükleme** | Seçili gruptan birini tut ve sürükle | Seçili kapıyı tutup sürükleme |
-| **Onaylı Silme** | Sağ Tık (Tekli veya seçili grup) | Uzun Basma (Long Press) |
+| **Bileşen Taşıma** | Sol Tık + Sürükle | Obje üzerine dokunup sürükleme |
+| **Kablo Bağlama** | Pin 1 Sol Tık -> Pin 2 Sol Tık | Pin 1 Dokun (Seçilir) -> Pin 2 Dokun |
+| **Switch Aç/Kapa** | Sol Tık (Sürüklemeden bırak) | Hızlı dokunup bırakma (Tap) |
+| **Bileşen Ekleme** | Menüden Sol Tık Sürükle-Bırak | Menü kartından parmakla sahneye sürükle-bırak |
+| **Çoklu Seçim (Box Select)**| TOOLS menüsünden `⬚ SELECT` | TOOLS'tan `⬚ SELECT` seçiliyken parmakla kutu çizme |
+| **Onaylı Silme** | Sağ Tık (Tekli / Grup) | Uzun Basma (Long-Press ~350ms) veya Obje Bağlam Menüsü |
 | **İptal / Bırakma** | ESC veya Boş Alana Tıklama | Boş Ekrana Dokunma |
-
----
 
 ---
 
 ## 4. Son Mimari İyileştirmeler
 - **Sürükle-Bırak (Drag & Drop) Spawn:** Spawn menüsündeki kare butonlardan bileşenler oyun alanına sürüklenip bırakılarak doğrudan istenen ızgara hücresine spawn edilir.
-- **Kare Kart Menüsü (Grid Cards):** Sol spawn menüsü 2 sütunlu, ortasında sembol/ikon, altında ismi olan kare kartlar şeklinde düzenlendi.
+- **Dikdörtgen Kart Menüsü (1:1 Orantılı Çizim):** Sol spawn menüsü 2 sütunlu, üstte 1:1 kare şematik ikon, altta ismi olan kartlar şeklinde düzenlendi.
 - **Evrensel Şematik Standart Sembolleri (IEEE Std 91 / ANSI / IEC):**
   - **Lamba / Gösterge (Lamp):** Daire içinde tam 'X' (`Circle with X`). Sinyal 1 olduğunda yeşil dolgu, parlayan beyaz 'X' ve ışıma halkası.
   - **Anahtar (SPST Switch):** Bıçak kontaklı terminal anahtar. Açıkken kol yukarı kalkık, kapalıyken iki terminali birleştiren düz hat.
@@ -64,8 +67,19 @@ Golic/
 
 ---
 
-## 5. Bir Sonraki Aşama İçin Yapılacaklar
-- [ ] Tersiyer kapılar (Tam Toplayıcı / Full Adder, Flip-Flop, Osilatör/Clock)
-- [ ] Mobil platform için uzun basma (Long-press) ve dokunmatik jest optimizasyonu
-- [ ] Devre Kaydetme / Yükleme (JSON Save/Load)
-- [ ] Entegre Devre Paketleme (Black Box / IC Çip oluşturma)
+## 5. Sıralı Yol Haritası (Roadmap)
+
+### Aşama 1: Dinamik & Zamana Bağlı Bileşenler (Öncelikli)
+1. **Clock (Osilatör):** Belirli frekansta (0.5s, 1s) otomatik `0 -> 1 -> 0` vuruşu üreten kaynak. Devreye kalp atışı kazandırır.
+2. **Push Button (Anlık Buton):** Sadece basılı tutulduğunda 1 veren, bırakınca 0 olan yaylı buton.
+3. **D Flip-Flop (Bellek/Hafıza):** Clock darbesiyle gelen biti saklayan 1-bit hafıza hücresi (Sayaç ve RAM temeli).
+
+### Aşama 2: Sandbox & Üretkenlik Araçları (Tools Menüsü)
+1. **Rotate (Döndürme - R Tuşu):** Seçili kapıyı 90 derece döndürerek pin yönlerini (kuzey/güney/doğu/batı) ayarlama.
+2. **Klonlama (Clone / Ctrl+C, Ctrl+V):** Seçili grubu çoğaltma.
+3. **Save / Load (JSON Kayıt Sistemi):** Yapılan devreyi isim verip dosyaya kaydetme ve geri yükleme.
+
+### Aşama 3: Zengin Çıktı & Göstergeler (Geri Bildirim)
+1. **7-Segment Display:** 0-9 arası sayıları yakan 7 girişli dijital gösterge.
+2. **Buzzer (Sesli Uyarıcı):** Girişine 1 geldiğinde 'bip' tonu çıkaran piezo ses bileşeni.
+3. **Full Adder (Tam Toplayıcı) & Entegre Paketleme (IC / Black Box):** Kendi yaptığın devreyi tek bir çip haline getirme.
