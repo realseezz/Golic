@@ -130,34 +130,34 @@ public partial class WireView : Line2D
                         hopsX.Sort((a, b) => b.CompareTo(a));
 
                     Vector2 currentPos = segStart;
-                    float hopWidth = 12f;  // Köprünün genişliği
-                    float hopHeight = 14f; // Köprünün yüksekliği (yukarı kalkma mesafesi)
+                    finalPoints.Add(currentPos);
 
+                    float hopRadius = 10f; // Daha belirgin şematik köprü
                     foreach (float hx in hopsX)
                     {
                         float dir = (segEnd.X >= segStart.X) ? 1f : -1f;
-                        Vector2 beforeHop = new(hx - dir * hopWidth, y);
-                        Vector2 hopUpLeft = new(hx - dir * hopWidth, y - hopHeight);
-                        Vector2 hopUpRight = new(hx + dir * hopWidth, y - hopHeight);
-                        Vector2 afterHop = new(hx + dir * hopWidth, y);
-
+                        Vector2 beforeHop = new(hx - dir * hopRadius, y);
                         finalPoints.Add(beforeHop);
-                        finalPoints.Add(hopUpLeft);
-                        finalPoints.Add(hopUpRight);
-                        finalPoints.Add(afterHop);
 
+                        // Yarım daire kavis (köprü yukarıya doğru belirgin kabarır)
+                        int arcSegments = 10;
+                        for (int k = 1; k < arcSegments; k++)
+                        {
+                            float angle = Mathf.Pi - (Mathf.Pi * k / arcSegments); // Pi'den 0'a
+                            float arcX = hx - Mathf.Cos(angle) * hopRadius * dir;
+                            float arcY = y - Mathf.Sin(angle) * (hopRadius * 1.15f);
+                            finalPoints.Add(new Vector2(arcX, arcY));
+                        }
+
+                        Vector2 afterHop = new(hx + dir * hopRadius, y);
+                        finalPoints.Add(afterHop);
                         currentPos = afterHop;
                     }
-                }
-                else
-                {
-                    finalPoints.Add(segStart);
+                    continue; // Segment sonu bir sonraki adımda eklenecek
                 }
             }
-            else
-            {
-                finalPoints.Add(segStart);
-            }
+
+            finalPoints.Add(segStart);
         }
         finalPoints.Add(baseWaypoints[^1]);
 
